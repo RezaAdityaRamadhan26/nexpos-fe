@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Cookies from "js-cookie"
 import api from "@/utils/api"
+import Navbar from "../components/Navbar"
 
 interface Product {
     id: number;
@@ -11,6 +12,8 @@ interface Product {
     sku: string;
     price: number;
     stock: number;
+    category: string;
+    description: string;
 }
 
 interface CartItem {
@@ -92,67 +95,71 @@ export default function DashboardPage() {
     }
 
     return (
-    <div className="flex h-screen bg-gray-100">
-      {/* Kiri: Katalog Produk (70%) */}
-      <div className="w-2/3 p-6 overflow-y-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">NexPOS</h1>
-        
-        {isLoading ? (
-          <p>Memuat produk...</p>
-        ) : (
-          <div className="grid grid-cols-3 gap-4">
-            {products.map((product) => (
-              <div
-                key={product.id}
-                onClick={() => addToCart(product)}
-                className={`p-4 bg-white rounded-xl shadow cursor-pointer transition hover:shadow-lg ${product.stock === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                <div className="font-semibold text-lg text-gray-800">{product.name}</div>
-                <div className="text-blue-600 font-bold mt-1">Rp {product.price.toLocaleString('id-ID')}</div>
-                <div className="text-sm text-gray-500 mt-2">Sisa Stok: {product.stock}</div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Kanan: Keranjang Belanja (30%) */}
-      <div className="w-1/3 bg-white shadow-xl flex flex-col">
-        <div className="p-6 border-b">
-          <h2 className="text-xl font-bold text-gray-800">Keranjang Pesanan</h2>
-        </div>
-        
-        <div className="p-6 flex-1 overflow-y-auto space-y-4">
-          {cart.length === 0 ? (
-            <p className="text-gray-400 text-center mt-10">Keranjang masih kosong</p>
+    <div className="flex flex-col h-screen w-full bg-gray-100">
+      <Navbar />
+      {/* Bungkus sisa layout dashboard sebelumnya di dalam div flex-1 */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Kiri: Katalog Produk (70%) */}
+        <div className="w-2/3 p-6 overflow-y-auto">
+          <h1 className="text-3xl font-bold text-gray-800 mb-6">NexPOS</h1>
+          
+          {isLoading ? (
+            <p>Memuat produk...</p>
           ) : (
-            cart.map((item, index) => (
-              <div key={index} className="flex justify-between items-center border-b pb-2">
-                <div>
-                  <div className="font-semibold text-gray-800">{item.name}</div>
-                  <div className="text-sm text-gray-500">{item.quantity} x Rp {item.price.toLocaleString('id-ID')}</div>
+            <div className="grid grid-cols-3 gap-4">
+              {products.map((product) => (
+                <div
+                  key={product.id}
+                  onClick={() => addToCart(product)}
+                  className={`p-4 bg-white rounded-xl shadow cursor-pointer transition hover:shadow-lg ${product.stock === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <div className="font-semibold text-lg text-gray-800">{product.name}</div>
+                  <div className="text-blue-600 font-bold mt-1">Rp {product.price.toLocaleString('id-ID')}</div>
+                  <div className="text-sm text-gray-500 mt-2">Sisa Stok: {product.stock}</div>
                 </div>
-                <div className="font-bold text-gray-800">
-                  Rp {(item.quantity * item.price).toLocaleString('id-ID')}
-                </div>
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </div>
 
-        {/* Total & Tombol Bayar */}
-        <div className="p-6 bg-gray-50 border-t">
-          <div className="flex justify-between items-center mb-4 text-xl font-bold text-gray-800">
-            <span>Total:</span>
-            <span>Rp {totalAmount.toLocaleString('id-ID')}</span>
+        {/* Kanan: Keranjang Belanja (30%) */}
+        <div className="w-1/3 bg-white shadow-xl flex flex-col">
+          <div className="p-6 border-b">
+            <h2 className="text-xl font-bold text-gray-800">Keranjang Pesanan</h2>
           </div>
-          <button
-            onClick={handleCheckout}
-            disabled={cart.length === 0 || isCheckingOut}
-            className="w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition"
-          >
-            {isCheckingOut ? 'Memproses...' : 'BAYAR SEKARANG'}
-          </button>
+          
+          <div className="p-6 flex-1 overflow-y-auto space-y-4">
+            {cart.length === 0 ? (
+              <p className="text-gray-400 text-center mt-10">Keranjang masih kosong</p>
+            ) : (
+              cart.map((item, index) => (
+                <div key={index} className="flex justify-between items-center border-b pb-2">
+                  <div>
+                    <div className="font-semibold text-gray-800">{item.name}</div>
+                    <div className="text-sm text-gray-500">{item.quantity} x Rp {item.price.toLocaleString('id-ID')}</div>
+                  </div>
+                  <div className="font-bold text-gray-800">
+                    Rp {(item.quantity * item.price).toLocaleString('id-ID')}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Total & Tombol Bayar */}
+          <div className="p-6 bg-gray-50 border-t">
+            <div className="flex justify-between items-center mb-4 text-xl font-bold text-gray-800">
+              <span>Total:</span>
+              <span>Rp {totalAmount.toLocaleString('id-ID')}</span>
+            </div>
+            <button
+              onClick={handleCheckout}
+              disabled={cart.length === 0 || isCheckingOut}
+              className="w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition"
+            >
+              {isCheckingOut ? 'Memproses...' : 'BAYAR SEKARANG'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
