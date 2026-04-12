@@ -14,6 +14,7 @@ interface Product {
   stock: number;
   category: string;
   description: string;
+  image_url?: string;
 }
 
 export default function ProductsPage() {
@@ -23,6 +24,7 @@ export default function ProductsPage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [isUploading, setIsUploading] = useState(false)
   
   const [formData, setFormData] = useState({
     name: "",
@@ -31,6 +33,7 @@ export default function ProductsPage() {
     stock: 0,
     category: "",
     description: "",
+    image_url: ''
   });
 
   useEffect(() => {
@@ -53,7 +56,7 @@ export default function ProductsPage() {
       console.error('Form Tidak Valid', error)
       router.push('/login')
     }
-  }, []);
+  }, [router]);
 
   const fetchProducts = async () => {
     try {
@@ -91,7 +94,7 @@ export default function ProductsPage() {
       fetchProducts(); 
     } catch (error) {
       console.error("Gagal menyimpan produk", error);
-      alert("Gagal menyimpan produk. Pastikan Anda adalah Owner.");
+      alert("Gagal menyimpan produk. Pastikan Anda memiliki izin.");
     }
   };
 
@@ -116,10 +119,11 @@ export default function ProductsPage() {
         stock: product.stock || 0,
         category: product.category || "", 
         description: product.description || "",
+        image_url: product.image_url || "" 
       });
     } else {
       setEditingId(null);
-      setFormData({ name: "", sku: "", price: 0, stock: 0, category: "", description: "" });
+      setFormData({ name: "", sku: "", price: 0, stock: 0, category: "", description: "", image_url: "" });
     }
     setIsModalOpen(true);
   };
@@ -128,6 +132,32 @@ export default function ProductsPage() {
     setIsModalOpen(false);
     setEditingId(null);
   };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return;
+
+    const uploadData = new FormData();
+    uploadData.append("image", file);
+
+    setIsUploading(true);
+
+    try {
+      const res = await api.post('/products/upload', uploadData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+      
+      setFormData(prev => ({ ...prev, image_url: res.data.data.image_url }));
+      
+    } catch (error) {
+      console.error('Upload Gagal', error)
+      alert('Gagal Mengupload Gambar')
+    } finally {
+      setIsUploading(false);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -149,10 +179,10 @@ export default function ProductsPage() {
           <thead>
             <tr className="bg-gray-50 border-b border-gray-100 text-gray-600">
               <th className="p-4 font-semibold">ID</th>
+              <th className="p-4 font-semibold text-center">Gambar</th>
               <th className="p-4 font-semibold">Nama Produk</th>
               <th className="p-4 font-semibold">SKU</th>
               <th className="p-4 font-semibold">Kategori</th>
-              <th className="p-4 font-semibold">Deskripsi</th>
               <th className="p-4 font-semibold">Harga</th>
               <th className="p-4 font-semibold">Stok</th>
               <th className="p-4 font-semibold text-center">Aksi</th>
@@ -171,25 +201,34 @@ export default function ProductsPage() {
               products.map((p) => (
                 <tr key={p.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                   <td className="p-4 text-gray-500">{p.id}</td>
+                  {/* Kolom Tampilan Gambar Mini */}
+                  <td className="p-4 flex justify-center">
+                      {p.image_url ? (
+                          <img src={`http://localhost:8080${p.image_url}`} alt={p.name} className="w-12 h-12 object-cover rounded-md border" />
+                      ) : (
+                          <div className="w-12 h-12 bg-gray-200 rounded-md border flex items-center justify-center text-[10px] text-gray-400">No Img</div>
+                      )}
+                  </td>
                   <td className="p-4 font-medium text-gray-800">{p.name}</td>
                   <td className="p-4 text-gray-600">{p.sku || "-"}</td>
                   <td className="p-4 text-gray-600">{p.category}</td>
-                  <td className="p-4 text-gray-600 max-w-[200px] truncate" title={p.description || ""}>{p.description || "-"}</td>
                   <td className="p-4 text-gray-800">Rp {p.price.toLocaleString("id-ID")}</td>
                   <td className="p-4 text-gray-800">{p.stock}</td>
-                  <td className="p-4 flex justify-center gap-2">
-                    <button 
-                      onClick={() => openModal(p)}
-                      className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded hover:bg-yellow-200 transition-colors"
-                    >
-                      Edit
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(p.id)}
-                      className="bg-red-100 text-red-700 px-3 py-1 rounded hover:bg-red-200 transition-colors"
-                    >
-                      Hapus
-                    </button>
+                  <td className="p-4 text-center">
+                    <div className="flex justify-center gap-2">
+                        <button 
+                        onClick={() => openModal(p)}
+                        className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded hover:bg-yellow-200 transition-colors"
+                        >
+                        Edit
+                        </button>
+                        <button 
+                        onClick={() => handleDelete(p.id)}
+                        className="bg-red-100 text-red-700 px-3 py-1 rounded hover:bg-red-200 transition-colors"
+                        >
+                        Hapus
+                        </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -198,15 +237,42 @@ export default function ProductsPage() {
         </table>
       </div>
 
-      {/* Modal Form (Hanya Tampil Jika isModalOpen === true) */}
+      {/* Modal Form */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-8 w-full max-w-md shadow-2xl">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-8 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-6 text-gray-800">
               {editingId ? "Edit Produk" : "Tambah Produk Baru"}
             </h2>
             
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              
+              {/* --- AREA UPLOAD GAMBAR BARU --- */}
+              <div className="mb-2 p-4 border border-gray-200 rounded-xl bg-gray-50">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Gambar Produk</label>
+                <div className="flex items-center gap-4">
+                  {/* Preview Gambar */}
+                  {formData.image_url ? (
+                     <img src={`http://localhost:8080${formData.image_url}`} alt="Preview" className="w-16 h-16 object-cover rounded-lg border shadow-sm" />
+                  ) : (
+                     <div className="w-16 h-16 bg-white border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400 text-xs">Kosong</div>
+                  )}
+                  
+                  {/* Input File */}
+                  <div className="flex-1">
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={handleImageUpload} 
+                      disabled={isUploading}
+                      className="text-sm text-gray-500 w-full file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer" 
+                    />
+                    {isUploading && <p className="text-xs text-blue-600 mt-2 font-medium animate-pulse">Sedang mengupload gambar...</p>}
+                  </div>
+                </div>
+              </div>
+              {/* -------------------------------- */}
+
               <div className="flex gap-4">
                 <div className="flex-[2]">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Nama Produk</label>
@@ -239,11 +305,11 @@ export default function ProductsPage() {
                 <textarea rows={3} value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Masukkan deskripsi produk... (opsional)" />
               </div>
 
-              <div className="mt-4 flex gap-3 justify-end">
+              <div className="mt-4 flex gap-3 justify-end pt-4 border-t">
                 <button type="button" onClick={closeModal} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition-colors">
                   Batal
                 </button>
-                <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
+                <button type="submit" disabled={isUploading} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors shadow-md">
                   Simpan Produk
                 </button>
               </div>

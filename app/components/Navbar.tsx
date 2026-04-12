@@ -41,7 +41,10 @@ return (
                 <div className="flex gap-6 font-medium">
                     {/* Menu Produk: Bisa dilihat Owner ATAU Kasir yang diberi izin */}
                     {(userRole === 'owner' || canManageProducts) && (
+                        <>
                         <Link href="/products" className={isActive('/products')}>Produk</Link>
+                        <Link href="/history" className={isActive('/history')}>Riwayat</Link>
+                        </>
                     )}
 
                     {/* Menu RAHASIA yang HANYA bisa dilihat OWNER mutlak */}
