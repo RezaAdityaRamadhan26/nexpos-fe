@@ -271,7 +271,7 @@ export default function DashboardPage() {
                         onClick={() => product.stock > 0 && addToCart(product)}
                     >
                         {product.image_url ? (
-                            <img src={`http://localhost:8080${product.image_url}`} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                            <img src={`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:8080'}${product.image_url}`} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                         ) : (
                             <div className="flex flex-col items-center justify-center w-full h-full text-zinc-400 font-medium text-sm">
                                 <ImageOff className="w-8 h-8 mb-2 opacity-50" />
@@ -381,7 +381,7 @@ export default function DashboardPage() {
                        {/* Mini Image */}
                         <div className="w-14 h-14 bg-zinc-100 rounded-lg overflow-hidden shrink-0 border border-zinc-100">
                             {item.image_url ? (
-                                <img src={`http://localhost:8080${item.image_url}`} alt={item.name} className="w-full h-full object-cover" />
+                                <img src={`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:8080'}${item.image_url}`} alt={item.name} className="w-full h-full object-cover" />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center text-zinc-300">
                                     <ImageOff className="w-5 h-5" />

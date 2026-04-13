@@ -220,7 +220,7 @@ export default function ProductsPage() {
                       <td className="p-4 pl-6 text-zinc-500 font-medium text-sm">{p.id}</td>
                       <td className="p-4 flex justify-center">
                           {p.image_url ? (
-                              <img src={`http://localhost:8080${p.image_url}`} alt={p.name} className="w-12 h-12 object-cover rounded-xl border border-zinc-200 shadow-sm" />
+                              <img src={`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:8080'}${p.image_url}`} alt={p.name} className="w-12 h-12 object-cover rounded-xl border border-zinc-200 shadow-sm" />
                           ) : (
                               <div className="w-12 h-12 bg-zinc-100 rounded-xl border border-zinc-200 flex items-center justify-center text-zinc-400">
                                 <ImageIcon className="w-5 h-5 opacity-50" />
@@ -282,7 +282,7 @@ export default function ProductsPage() {
                   <div className="flex items-center gap-4">
                     {/* Preview Gambar */}
                     {formData.image_url ? (
-                       <img src={`http://localhost:8080${formData.image_url}`} alt="Preview" className="w-16 h-16 object-cover rounded-xl border border-zinc-200 shadow-sm" />
+                       <img src={`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:8080'}${formData.image_url}`} alt="Preview" className="w-16 h-16 object-cover rounded-xl border border-zinc-200 shadow-sm" />
                     ) : (
                        <div className="w-16 h-16 bg-white border-2 border-dashed border-zinc-300 rounded-xl flex items-center justify-center text-zinc-400">
                           <ImageIcon className="w-6 h-6 opacity-30" />
