@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import Navbar from "../components/Navbar";
 import api from "@/utils/api";
+import { toast } from "sonner";
+import { UserCog, KeyRound, Save, Loader2, Mail, User } from "lucide-react";
 
 export default function SettingsPage() {
     const router = useRouter();
@@ -17,7 +19,6 @@ export default function SettingsPage() {
 
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
-    const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
 
     useEffect(() => {
         const token = Cookies.get('token');
@@ -31,7 +32,7 @@ export default function SettingsPage() {
             const decodedPayload = JSON.parse(atob(payloadBase64));
 
             if (decodedPayload.role !== 'owner') {
-                alert('Akses Ditolak: Halaman khusus untuk owner');
+                toast.error('Akses Ditolak: Halaman khusus untuk owner');
                 router.push('/dashboard');
                 return;
             }
@@ -50,8 +51,7 @@ export default function SettingsPage() {
                     password: ''
                 })
             } catch (error) {
-                console.error('Gagal mengambil profile!', error)
-                setMessage({ type: 'error', text: 'Gagal mengambil data profil dari server.' })                    
+                toast.error('Gagal mengambil data profil dari server.');
             } finally {
                 setIsLoading(false)
             }
@@ -62,7 +62,6 @@ export default function SettingsPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSaving(true);
-        setMessage(null);
 
         try {
             const payload: any = {
@@ -73,93 +72,101 @@ export default function SettingsPage() {
                 payload.password = formData.password
             }
             await api.put('/users/profile', payload)
-            setMessage({
-                type: 'success',
-                text: 'Profil Berhasil Diperbarui!'
-            })            
+            
+            toast.success('Profil Berhasil Diperbarui!');
             setFormData(prev => ({...prev, password: ''}))
         } catch (error: any) {
-            console.error('Gagal update profile!');
-            setMessage({ 
-                type: 'error', 
-                text: error.response?.data?.error || 'Gagal memperbarui profil.' 
-            })
+            toast.error(error.response?.data?.error || 'Gagal memperbarui profil.')
         } finally {
             setIsSaving(false)
         }
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col">
+        <div className="min-h-screen bg-zinc-50 flex flex-col">
             <Navbar />
             
             <div className="flex-1 p-8 max-w-3xl mx-auto w-full">
                 <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-800">Pengaturan Akun</h1>
-                    <p className="text-gray-500 mt-2">Kelola informasi profil dan keamanan akun Owner Anda.</p>
+                    <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">Pengaturan Akun</h1>
+                    <p className="text-sm text-zinc-500 mt-1">Kelola informasi profil dan keamanan akun Owner Anda.</p>
                 </div>
 
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-zinc-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
                     {isLoading ? (
-                        <div className="p-12 text-center text-gray-500 animate-pulse font-medium">Memuat data profil...</div>
+                        <div className="flex flex-col items-center justify-center p-20 text-zinc-400 gap-4">
+                            <Loader2 className="w-8 h-8 animate-spin" />
+                            <p className="font-medium text-sm">Memuat data profil...</p>
+                        </div>
                     ) : (
-                        <div className="p-8">
-                            {message && (
-                                <div className={`p-4 rounded-lg mb-6 text-sm font-medium ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
-                                    {message.text}
-                                </div>
-                            )}
+                        <div className="p-8 sm:p-10">
+                            <form onSubmit={handleSubmit} className="space-y-8">
+                                <div className="space-y-6">
+                                    <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-800 flex items-center gap-2 mb-4">
+                                        <UserCog className="w-5 h-5" /> Informasi Dasar
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {/* Input Nama */}
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold uppercase tracking-wider text-zinc-600 flex items-center gap-2">
+                                                <User className="w-3.5 h-3.5" /> Nama Lengkap
+                                            </label>
+                                            <input 
+                                                required 
+                                                type="text" 
+                                                value={formData.name} 
+                                                onChange={(e) => setFormData({...formData, name: e.target.value})} 
+                                                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-zinc-900 font-medium focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all placeholder:text-zinc-400" 
+                                                placeholder="Nama Anda"
+                                            />
+                                        </div>
 
-                            <form onSubmit={handleSubmit} className="space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {/* Input Nama */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
-                                        <input 
-                                            required 
-                                            type="text" 
-                                            value={formData.name} 
-                                            onChange={(e) => setFormData({...formData, name: e.target.value})} 
-                                            className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-shadow" 
-                                        />
-                                    </div>
-
-                                    {/* Input Email */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Alamat Email</label>
-                                        <input 
-                                            required 
-                                            type="email" 
-                                            value={formData.email} 
-                                            onChange={(e) => setFormData({...formData, email: e.target.value})} 
-                                            className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-shadow" 
-                                        />
+                                        {/* Input Email */}
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold uppercase tracking-wider text-zinc-600 flex items-center gap-2">
+                                                <Mail className="w-3.5 h-3.5" /> Alamat Email
+                                            </label>
+                                            <input 
+                                                required 
+                                                type="email" 
+                                                value={formData.email} 
+                                                onChange={(e) => setFormData({...formData, email: e.target.value})} 
+                                                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-zinc-900 font-medium focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all placeholder:text-zinc-400" 
+                                                placeholder="email@toko.com"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 
                                 {/* Bagian Ubah Password */}
-                                <div className="pt-6 border-t border-gray-100 mt-6">
-                                    <h3 className="text-lg font-bold text-gray-800 mb-4">Keamanan</h3>
-                                    <div className="max-w-md">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Password Baru</label>
+                                <div className="pt-8 border-t border-zinc-100">
+                                    <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-800 flex items-center gap-2 mb-6">
+                                        <KeyRound className="w-5 h-5" /> Keamanan Akun
+                                    </h3>
+                                    <div className="max-w-md bg-zinc-50 p-6 rounded-2xl border border-zinc-200">
+                                        <label className="block text-xs font-bold uppercase tracking-wider text-zinc-600 mb-2">Password Baru</label>
                                         <input 
                                             type="password" 
                                             value={formData.password} 
                                             onChange={(e) => setFormData({...formData, password: e.target.value})} 
-                                            className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-shadow" 
-                                            placeholder="Biarkan kosong jika tidak ingin mengubah"
+                                            className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-zinc-900 font-medium focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all placeholder:text-zinc-400" 
+                                            placeholder="••••••••"
                                             minLength={6}
                                         />
-                                        <p className="text-xs text-gray-400 mt-2">Isi kolom ini HANYA jika Anda ingin mengganti password lama Anda dengan yang baru.</p>
+                                        <p className="text-xs font-medium text-zinc-500 mt-3 flex items-start gap-1.5">
+                                            <span className="text-zinc-400 mt-0.5">*</span> 
+                                            Biarkan kosong jika Anda tidak ingin mengubah password lama.
+                                        </p>
                                     </div>
                                 </div>
 
-                                <div className="pt-6 flex justify-end">
+                                <div className="pt-8 flex justify-end border-t border-zinc-100">
                                     <button 
                                         type="submit" 
                                         disabled={isSaving}
-                                        className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-bold py-3 px-8 rounded-lg transition-colors shadow-sm"
+                                        className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 disabled:from-zinc-300 disabled:to-zinc-300 disabled:text-zinc-500 text-white font-bold py-3.5 px-8 rounded-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 active:scale-95"
                                     >
+                                        {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
                                         {isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}
                                     </button>
                                 </div>
